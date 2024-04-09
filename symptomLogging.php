@@ -240,9 +240,29 @@
         margin-left:20px;
     }
 
-    .symptom-form textarea {
-        height: 100px; 
+ 
+     .symptom-form input[type="number"] {
+        width: calc(100% - 50px); 
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        margin-right: 20px; 
+        margin-left:20px;
     }
+
+    
+    .symptom-form textarea {
+        width: calc(100% - 50px); 
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        margin-right: 20px; 
+        margin-left:20px;
+        height: 100px;
+    }
+
 
     .symptom-form button[type="submit"] {
         background-color: #07bca3;
@@ -252,12 +272,14 @@
         border-radius: 5px;
         cursor: pointer;
         transition: background-color 0.3s;
-        width: 100%;
+        width: calc(100% - 50px); 
+        margin-left:20px;
     }
 
     .symptom-form button[type="submit"]:hover {
         background-color: grey;
     }
+</style>
     </style>
 
 
@@ -294,7 +316,7 @@
     <p>If you are planning or avoiding pregnancy, the platform provides fertility tracking tools, including predictions of fertile windows based on basal body temperature and other indicators. Start by filling the form below:</p>
     
     <div class="symptom-form">
-    <form action="submit_symptoms.php" method="post">
+    <form action="symptoms_save_data.php" method="post">
         <label for="date">Date:</label>
         <input type="date" id="date" name="date" required><br><br>
 
@@ -305,10 +327,18 @@
             <option value="Mood Swings">Mood Swings</option>
         </select><br><br>
 
+        <label for="severity">Severity:</label>
+        <input type="number" id="severity" name="severity" min="0" max="10"><br><br>
+
+        <label for="frequency">Frequency:</label>
+        <input type="number" id="frequency" name="frequency" min="0"><br><br>
+
         <label for="notes">Additional Notes:</label><br>
         <textarea id="notes" name="notes" rows="4" cols="50"></textarea><br><br>
 
-        <button type="submit">submit here</button>
+        <button type="submit">Submit</button>
+    </form>
+
     </form>
     </div>
 </section>

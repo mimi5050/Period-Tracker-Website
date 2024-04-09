@@ -15,11 +15,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $userID = $_SESSION["UserID"];
     $lastPeriodDate = $_POST['lastPeriodDate'];
     $cycleLength = isset($_POST['cycleLength']) ? $_POST['cycleLength'] : NULL;
-    
+
+    // Calculate NextPeriodStartDate
+    $nextPeriodStartDate = date('Y-m-d', strtotime($lastPeriodDate . " + $cycleLength days"));
+
+    // Calculate NextPeriodEndDate
+    $nextPeriodEndDate = date('Y-m-d', strtotime($nextPeriodStartDate . " + $cycleLength days"));
+
     // Insert data into the database
-    $insert_query = "INSERT INTO periodpredictions (UserID, LastPeriodDate, AverageCycleLength) 
-                     VALUES ('$userID', '$lastPeriodDate', '$cycleLength')";
-    
+    $insert_query = "INSERT INTO periodpredictions (UserID, LastPeriodDate, AverageCycleLength, NextPeriodStartDate, NextPeriodEndDate) 
+                     VALUES ('$userID', '$lastPeriodDate', '$cycleLength', '$nextPeriodStartDate', '$nextPeriodEndDate')";
+
     if ($conn->query($insert_query) === TRUE) {
         // Data inserted successfully
         // Redirect user to another page or show a success message

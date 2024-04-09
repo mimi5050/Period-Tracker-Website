@@ -296,7 +296,7 @@
                 <input type="date" id="lastPeriodDate" name="lastPeriodDate" required>
             </div>
             <div class="form-group">
-                <label for="cycleLength">Average Cycle Length (optional):</label>
+                <label for="cycleLength"> Enter Cycle Length:</label>
                 <input type="number" id="cycleLength" name="cycleLength" placeholder="Enter average cycle length">
                 <small>(Leave it blank if you are not sure!)</small>
             </div>

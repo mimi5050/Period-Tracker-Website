@@ -22,16 +22,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $cycleLength = $_POST["cycleLength"];
     $periodLength = $_POST["periodLength"];
 
-    // Set parameters
-    $fertileStartDate = date("Y-m-d", strtotime($lastPeriodDate . " + " . ($cycleLength - 14) . " days")); // Assuming ovulation occurs around day 14 of the cycle
-    $fertileEndDate = date("Y-m-d", strtotime($fertileStartDate . " + 6 days")); // Assuming fertility window is 7 days
+    // Calculate the midpoint of the menstrual cycle
+    $midpoint = $cycleLength / 2;
+
+    // Estimate the start of the fertile window
+    $fertileStartDate = date("Y-m-d", strtotime($lastPeriodDate . " + " . $midpoint . " days"));
+
+    // Estimate the end of the fertile window
+    $fertileEndDate = date("Y-m-d", strtotime($fertileStartDate . " + 6 days"));
+// Debugging outputs
+echo "Fertile Start Date: " . $fertileStartDate . "<br>";
+echo "Fertile End Date: " . $fertileEndDate . "<br>";
 
     // Prepare an insert statement
     $sql = "INSERT INTO fertilitypredictions (UserID, LastPeriodDate, AverageCycleLength, AveragePeriodLength, FertileStartDate, FertileEndDate) VALUES (?, ?, ?, ?, ?, ?)";
 
     if ($stmt = $conn->prepare($sql)) {
         // Bind variables to the prepared statement as parameters
-        $stmt->bind_param("isiiii", $userID, $lastPeriodDate, $cycleLength, $periodLength, $fertileStartDate, $fertileEndDate);
+        $stmt->bind_param("isiiss", $userID, $lastPeriodDate, $cycleLength, $periodLength, $fertileStartDate, $fertileEndDate);
 
         // Attempt to execute the prepared statement
         if ($stmt->execute()) {
@@ -39,11 +47,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             header("location: fertility_data_submitted.php");
             exit();
         } else {
-            echo "Oops! Something went wrong. Please try again later.";
+            echo "Oops! Something went wrong with executing the SQL statement.";
         }
 
         // Close statement
         $stmt->close();
+    } else {
+        echo "Oops! Something went wrong with preparing the SQL statement.";
     }
 
     // Close connection

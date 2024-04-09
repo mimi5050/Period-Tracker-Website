@@ -1,3 +1,10 @@
+<?php
+// Start session 
+session_start();
+
+// database connection 
+include "connection.php";
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -366,6 +373,63 @@
       .card:hover h3 {
       color: white !important;
     }
+ 
+    #editPopup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 999;
+      background-color: rgba(0, 0, 0, 0.5);
+  
+    }
+    .popup-content {
+    background-color: #fff;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    width: 80%;
+    color: #333; 
+    font-family: Arial, sans-serif; 
+}
+
+.popup-content input,
+.popup-content textarea {
+    width: 80%;
+    padding: 10px;
+    margin-bottom:40px;
+    margin-top:10px;
+    margin-left:30px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.popup-content button {
+    background-color: #07bca3;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 45%;
+    height: 10px; 
+    margin-right: 5%; 
+    text-align:center;
+}
+
+.popup-content button.close {
+    background-color: #ccc;
+    color: #333;
+    width: 45%; 
+    margin-right: 0;
+    margin-left:120px;
+}
 
 
     </style>
@@ -398,7 +462,7 @@
             <h1>Get Started</h1>
             <p>We care about you and provide you with your menstrual cycle information. During your menstrual cycle, your hormone levels fluctuate, affecting your mood, energy levels, and more.
               Keeping track of your cycle can help you anticipate changes and better manage your well-being.</p>
-            <button onclick="document.location='#'" >Comfirm your Period start date here</button>
+            <button onclick="document.location='period_predictions.php'" >Comfirm your Period start date here</button>
             
         </div>
 
@@ -430,48 +494,187 @@
         </div>
       </div>
       
-      <div class="symptom_monitoring">
-        <h2><a href="#">Symptom Monitoring</a></h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Symptom </th>
-              <th>First Aid</th>
-              <th>Additional Notes</th>
-              <th>Rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-                <td>Menstrual cramps or dysmenorrhea</td>
-                <td>Heat</td>
-                <td>Adotes</td>
-                <td class="severe">Severe</td>
-            </tr>
-            <tr>
-                <td>Abdominal bloating</td>
-                <td>Water</td>
-                <td> will do sports</td>
-                <td class="moderate">Moderate</td>
-            </tr>
-            <tr>
-                <td>Tender breasts</td>
-                <td>Supportive bra</td>
-                <td> will go to the sports</td>
-                <td class="mild"> Mild</td>
-            </tr>
-            <tr>
-                <td>Fatigue</td>
-                <td> Rest</td>
-                <td>Addotes</td>
-                <td class="mild_moderate"> Mild to moderate</td>
-            </tr>
-          </tbody>
-        </table>
-        <br>
-        <a href="" style="background-color:#07bca3; color:white"><u>View More</u></a>
+        <div class="symptom_monitoring">
+    <h2><a href="#">Symptom Monitoring</a></h2>
+    <table>
+  
+      <tbody>
+        <?php
+      
+      // Check if the user is logged in
+      if (isset($_SESSION['UserID'])) {
+          // Fetch symptoms for the logged-in user
+          $query = "SELECT * FROM symptoms WHERE UserID = " . $_SESSION['UserID'];
+          $result = mysqli_query($conn, $query);
+      
+          // Check if the query was successful
+          if ($result) {
+              // If symptoms are recorded for the user
+              if (mysqli_num_rows($result) > 0) {
+                  echo "<table>";
+                  echo "<thead>";
+                  echo "<tr>";
+                  echo "<th>Symptom Name</th>";
+                  echo "<th>Severity</th>";
+                  echo "<th>Frequency</th>";
+                  echo "<th>Date Recorded</th>";
+                  echo "<th>Notes</th>";
+                  echo "<th>Action</th>"; // New column for action buttons
+                  echo "</tr>";
+                  echo "</thead>";
+                  echo "<tbody>";
+      
+                  // Loop through symptoms and populate table rows
+                  while ($row = mysqli_fetch_assoc($result)) {
+                      echo "<tr>";
+                      echo "<td>" . $row['SymptomName'] . "</td>";
+                      echo "<td>" . $row['Severity'] . "</td>";
+                      echo "<td>" . $row['Frequency'] . "</td>";
+                      echo "<td>" . $row['DateRecorded'] . "</td>";
+                      echo "<td>" . $row['Notes'] . "</td>";
+                      echo "<td>";
+                      // Pass symptom data to openEditPopup() function
+                      echo "<button onclick=\"openEditPopup('" . $row['SymptomID'] . "','" . $row['SymptomName'] . "','" . $row['Severity'] . "','" . $row['Frequency'] . "','" . $row['DateRecorded'] . "','" . $row['Notes'] . "')\" style='background-color:#07bca3; padding:5px; color:white; display:inline-block;margin-left:0px;margin-right:10px;'>Edit</button>";
+                      // Pass symptom ID to deleteSymptom() function with confirmation
+                      echo "<button onclick=\"displayDeleteMessage(" . $row['SymptomID'] . ")\" style='background-color:#07bca3; padding:5px; color:white; display:inline-block; margin-left:0px;'>Delete</button>";
+                      echo "</td>";
+                      echo "</tr>";
+                  }
+      
+                  echo "</tbody></table>";
+              } else {
+                  // If no symptoms are recorded for the user
+                  echo "No symptoms recorded.";
+              }
+          } else {
+              // If there's an error with the query
+              echo "Error: " . mysqli_error($conn);
+          }
+      
+          // Close the database connection
+          mysqli_close($conn);
+      } else {
+          // If the user is not logged in, redirect them to the login page
+          header("Location: login.php");
+          exit();
+      }
+      ?>
+      
+      <!-- Rest of your HTML code -->
+      
+      <div id="editPopup" class="popup">
+        <div class="popup-content">
+          <!-- Form fields to edit the symptom -->
+          <form id="editForm">
+            <!-- Add your form fields here -->
+            <input type="hidden" id="symptom_id" name="symptom_id" value="">
+            <input type="text" id="editSymptomName" name="editSymptomName" placeholder="Symptom Name" required>
+            <input type="text" id="editSeverity" name="severity" placeholder="Severity" required>
+            <input type="text" id="editFrequency" name="frequency" placeholder="Frequency" required>
+            <input type="date" id="editDateRecorded" name="editDateRecorded" required>
+            <textarea id="editNotes" name="notes" placeholder="Notes"></textarea>
+            <!-- Move the button to its desired position -->
+            <button type="button" onclick="saveChanges()" style="margin-bottom:20px; margin-left:-250px; margin-top:-80px;">Save Changes</button>
+          </form>
+      
+          <button class="close" onclick="closeEditPopup()">Close</button>
+        </div>
       </div>
-    </div>
-  </div>
+      
+      <!-- Delete confirmation message -->
+      <div id="deleteConfirmation" style="display: none;">
+          <p>Are you sure you want to delete this symptom?</p>
+          <button onclick="deleteSymptom()" style="margin-right: 10px;">Yes</button>
+          <button onclick="hideDeleteMessage()">No</button>
+      </div>
+      
+      <script>
+        // Function to open the edit popup
+        function openEditPopup(symptomId, symptomName, severity, frequency, dateRecorded, notes) {
+          // Populate form fields with existing data
+          document.getElementById("symptom_id").value = symptomId;
+          document.getElementById("editSymptomName").value = symptomName;
+          document.getElementById("editSeverity").value = severity;
+          document.getElementById("editFrequency").value = frequency;
+          document.getElementById("editDateRecorded").value = dateRecorded;
+          document.getElementById("editNotes").value = notes;
+          
+          // Show the popup
+          document.getElementById("editPopup").style.display = "block";
+        }
+      
+        // Function to close the edit popup
+        function closeEditPopup() {
+          // Hide the popup
+          document.getElementById("editPopup").style.display = "none";
+        }
+      
+        // Function to save changes using AJAX
+        function saveChanges() {
+          // Get form data
+          var formData = new FormData(document.getElementById("editForm"));
+      
+          // Send AJAX request
+          var xhr = new XMLHttpRequest();
+          xhr.open("POST", "edit_symptom.php", true);
+          xhr.onload = function () {
+            if (xhr.status === 200) {
+              // Check if the update was successful
+              if (xhr.responseText.trim() === "success") {
+                // Reload the page to reflect changes
+                location.reload();
+              } else {
+                alert("Error updating record: " + xhr.responseText);
+              }
+            } else {
+              alert("Error: " + xhr.statusText);
+            }
+          };
+          xhr.onerror = function () {
+            alert("Network Error");
+          };
+          xhr.send(formData);
+        }
+      
+        // Function to display delete confirmation message
+        function displayDeleteMessage(symptomId) {
+          var deleteConfirmation = document.getElementById("deleteConfirmation");
+          deleteConfirmation.style.display = "block";
+      
+          // Store the symptom ID to be deleted
+          deleteConfirmation.setAttribute("data-symptom-id", symptomId);
+        }
+      
+        // Function to hide delete confirmation message
+        function hideDeleteMessage() {
+          var deleteConfirmation = document.getElementById("deleteConfirmation");
+          deleteConfirmation.style.display = "none";
+        }
+      
+        // Function to delete symptom with confirmation
+        function deleteSymptom() {
+          // Get the symptom ID to be deleted
+          var symptomId = document.getElementById("deleteConfirmation").getAttribute("data-symptom-id");
+      
+          // Send AJAX request to delete_symptom.php
+          var xhr = new XMLHttpRequest();
+          xhr.open("POST", "delete_symptom.php", true);
+          xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+          xhr.onreadystatechange = function() {
+              if (xhr.readyState == 4 && xhr.status == 200) {
+                  // Reload the page after deletion
+                  location.reload();
+              }
+          };
+          // Send symptom ID as data to delete_symptom.php
+          xhr.send("symptom_id=" + symptomId);
+      
+          // Hide delete confirmation message
+          hideDeleteMessage();
+        }
+      </script>
+      
+
+
 </body>
 </html>

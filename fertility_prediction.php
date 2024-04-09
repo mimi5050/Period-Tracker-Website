@@ -299,11 +299,11 @@ button[type="submit"]:hover {
                 <input type="date" id="lastPeriodDate" name="lastPeriodDate" required>
             </div>
             <div class="form-group">
-                <label for="cycleLength">Average Cycle Length (in days):</label>
+                <label for="cycleLength">Cycle Length (in days):</label>
                 <input type="number" id="cycleLength" name="cycleLength" required>
             </div>
             <div class="form-group">
-                <label for="periodLength">Average Period Length (in days):</label>
+                <label for="periodLength">Period Length (in days):</label>
                 <input type="number" id="periodLength" name="periodLength" required>
             </div>
             <button type="submit">Predict Fertility</button>
