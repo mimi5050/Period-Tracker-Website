@@ -4,6 +4,8 @@ session_start();
 
 // database connection 
 include "connection.php";
+if(isset($_SESSION['userID'])) 
+  $userID = $_SESSION['userID'];
 ?>
 <!DOCTYPE html>
 <html>

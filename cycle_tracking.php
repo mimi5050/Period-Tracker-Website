@@ -435,11 +435,14 @@
   <div class="popup-content">
     <span class="close">&times;</span>
     <h2 class="popup-title">Add Note</h2>
-    <textarea id="noteTextarea" rows="4" cols="50" placeholder="Add your notes here..."></textarea>
-    <button id="saveNoteBtn" style="background-color:#07bca3; margin-top:20px;font-size:18px;color:white; margin-left:150px; padding:10px;">Save</button>
+    <form id="noteForm" action="save_notes.php" method="POST">
+        <input type="text" id="noteTitle" name="noteTitle" placeholder="Note Title">
+        <textarea id="noteText" name="noteText" rows="4" cols="50" placeholder="Add your notes here..."></textarea>
+        <button id="saveNoteBtn" style="background-color:#07bca3; margin-top:20px;font-size:18px;color:white; margin-left:150px; padding:10px;">Save</button>
+    </form>
+
   </div>
 </div>
-
 
 <script>
 // Function to determine the phase of the cycle based on the day
@@ -519,25 +522,64 @@ const getPhaseColor = (phase) => {
     ovulation: "green",
     luteal: "pink"
   };
-  return phaseColors[phase] || "white"; // Default color to white if phase not defined
+  return phaseColors[phase] || "whitesmoke";
 };
+
 
 // Event listener for clicks on each date
 document.addEventListener('click', function(e) {
   if (e.target && e.target.classList.contains('date-link')) {
     e.preventDefault();
     const day = e.target.dataset.day;
-    // Show popup for adding notes
-    openNotePopup(day);
+    const monthYear = document.querySelector(".month").innerText.trim();
+    // Show popup for adding notes and pass the date information
+    openNotePopup(day, monthYear);
   }
 });
 
-function openNotePopup(day) {
+function openNotePopup(day, monthYear) {
   // Display the popup
   document.getElementById('notePopup').style.display = "block";
-  // Set the day in the popup
+  // Set the day and monthYear in the popup
   document.getElementById('notePopup').setAttribute('data-day', day);
+  document.getElementById('notePopup').setAttribute('data-month-year', monthYear);
 }
+
+// Save the note when clicking on the save button
+document.getElementById('saveNoteBtn').addEventListener('click', function() {
+    // Disable the button to prevent multiple submissions
+    this.disabled = true;
+
+    // Get the day and month_year values
+    const day = document.getElementById('notePopup').getAttribute('data-day');
+    const monthYear = document.querySelector(".month").textContent.trim();
+
+    // Add day and month_year values to form data
+    const formData = new FormData();
+    formData.append('noteTitle', document.getElementById('noteTitle').value);
+    formData.append('noteText', document.getElementById('noteText').value);
+    formData.append('day', day);
+    formData.append('monthYear', monthYear);
+
+    // Send form data to PHP script
+    fetch('save_notes.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            // Redirect to success page
+            window.location.href = 'success.php';
+        } else {
+            throw new Error('Network response was not ok');
+        }
+    })
+    .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+    });
+});
+
+
 
 // Close the popup when clicking on the close button
 document.addEventListener('click', function(e) {
@@ -562,6 +604,12 @@ document.getElementById('saveNoteBtn').addEventListener('click', function() {
   console.log("Note for day", day, ":", note);
   // Close the popup after saving the note
   closeNotePopup();
+});
+
+// Save the note when clicking on the save button
+document.getElementById('saveNoteBtn').addEventListener('click', function() {
+  // Submit the form
+  document.getElementById('noteForm').submit();
 });
 
 function closeNotePopup() {

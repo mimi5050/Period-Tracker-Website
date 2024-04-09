@@ -300,6 +300,11 @@
                 <input type="number" id="cycleLength" name="cycleLength" placeholder="Enter average cycle length">
                 <small>(Leave it blank if you are not sure!)</small>
             </div>
+            <div class="form-group">
+                <label for="averagePeriodLength">Period Length (in days):</label>
+                <input type="number" id="averagePeriodLength" name="averagePeriodLength" placeholder="Enter average period length">
+                <small>(Leave it blank if you are not sure!)</small>
+            </div>
             <button type="submit">Predict Period</button>
         </form>
 
