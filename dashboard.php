@@ -1,16 +1,56 @@
 <?php
-// Start session 
+// Start or resume a session
 session_start();
 
-// database connection 
-include "connection.php";
-if(isset($_SESSION['userID'])) 
-  $userID = $_SESSION['userID'];
+// Check if the user is logged in
+if (!isset($_SESSION['UserID'])) {
+    // Redirect the user to the login page if not logged in
+    header("Location: login.php");
+    exit(); // Stop script execution
+}
+
+// Include connection.php to establish database connection
+include 'connection.php';
+
+// Fetch logged-in user's ID from session
+$userID = $_SESSION['UserID'];
+// Fetch data from periodpredictions table for the logged-in user
+// Initialize an empty array to store the fetched data
+$data = array();
+
+// Query to fetch data from periodpredictions and fertilitypredictions tables for the logged-in user
+$query = "SELECT pp.*, fp.*
+          FROM periodpredictions AS pp
+          LEFT JOIN fertilitypredictions AS fp ON pp.UserID = fp.UserID
+          WHERE pp.UserID = $userID";
+
+// Execute the query
+$result = mysqli_query($conn, $query);
+
+// Check if the query was successful
+if ($result) {
+    // Fetch the rows
+    while ($row = mysqli_fetch_assoc($result)) {
+        // Add the row to the $data array
+        $data[] = $row;
+    }
+
+    // Free result set
+    mysqli_free_result($result);
+} else {
+    // If there's an error with the query
+    echo "Error: " . mysqli_error($conn);
+}
+
+// Now the $data array contains the fetched data from both tables
+
+
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dashboard | TalentHub</title>
+  <title>Dashboard | FlowFemme</title>
   <link rel="stylesheet" type="text/css" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -472,27 +512,223 @@ if(isset($_SESSION['userID']))
         <h2><a href="#">Cycle Summary</a></h2>
             <div class="card">
             <h3><i class="fas fa-infinity"></i> Cycle Length</h3>
-            <p>29 days</p>
+            <?php
+        // Query to fetch AverageCycleLength for the user
+          $query = "SELECT AverageCycleLength FROM periodpredictions WHERE UserID = ?";
+
+          $stmt = $conn->prepare($query);
+
+          $stmt->bind_param("i", $userID); // Bind user ID to the query
+
+          $stmt->execute();
+
+          $result = $stmt->get_result();
+
+          if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            $averageCycleLength = $row['AverageCycleLength'];
+
+            // Display AverageCycleLength within a paragraph tag with labels
+            echo "<p> <strong>" . $averageCycleLength . " days</strong></p>";
+          } else {
+            echo "No AverageCycleLength data found.";
+          }
+
+          $stmt->close();
+                
+          ?>
+
           </div>
           <div class="card">
             <h3><i class="fas fa-tint"></i> Period Length</h3>
-            <p>5 days</p>
+            <?php
+            // Query to fetch AveragePeriodLength for the user
+            $query = "SELECT AveragePeriodLength FROM periodpredictions WHERE UserID = ?";
+
+            $stmt = $conn->prepare($query);
+
+            $stmt->bind_param("i", $userID); // Bind user ID to the query
+
+            $stmt->execute();
+
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                $averagePeriodLength = $row['AveragePeriodLength'];
+
+                // Display AveragePeriodLength within a paragraph tag with labels
+                echo "<p> <strong>" . $averagePeriodLength . " days</strong></p>";
+            } else {
+                echo "No AveragePeriodLength data found.";
+            }
+
+            $stmt->close();
+            ?>
+
           </div>
             <div class="card">
             <h3><i class="fas fa-heartbeat"></i> Ovulation Date</h3>
-          <p>January 16, 2024</p>
+            <?php
+          // Assuming you already have a database connection
+
+          // Query to fetch the start date of the period for the user
+          $query = "SELECT LastPeriodDate FROM periodpredictions WHERE UserID = ?";
+          $stmt = $conn->prepare($query);
+          $stmt->bind_param("i", $userID);
+          $stmt->execute();
+          $result = $stmt->get_result();
+
+          if ($result->num_rows > 0) {
+              $row = $result->fetch_assoc();
+              $lastPeriodDate = new DateTime($row['LastPeriodDate']);
+
+              // Calculate ovulation date
+              $ovulationDate = clone $lastPeriodDate;
+              $ovulationDate->add(new DateInterval("P14D"));
+
+              // Display ovulation date
+              echo "<p><strong>" . $ovulationDate->format('Y-m-d') . "</strong></p>";
+          } else {
+              echo "<p>No data found for the user.</p>";
+          }
+
+          $stmt->close();
+          ?>
+
         </div>
         <div class="card">
             <h3><i class="fas fa-baby"></i> Probability of Pregnancy</p>
-          <p>30%</p>
+            <?php
+            // Assuming you already have a database connection
+
+            // Query to fetch the start date of the period for the user
+            $query = "SELECT LastPeriodDate FROM periodpredictions WHERE UserID = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $userID);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                $lastPeriodDate = new DateTime($row['LastPeriodDate']);
+
+                // Calculate ovulation date
+                $ovulationDate = clone $lastPeriodDate;
+                $ovulationDate->add(new DateInterval("P14D"));
+
+                // Calculate the number of days since ovulation
+                $now = new DateTime();
+                $interval = $now->diff($ovulationDate);
+                $countdown = $interval->days;
+
+                // If the countdown is negative or exceeds the day of ovulation, set it to 0
+                if ($countdown < 0 || $countdown > 14) {
+                    $countdown = 0;
+                } else {
+                    // If the countdown is within the ovulation window, calculate the countdown from the ovulation day
+                    $countdown = 14 - $countdown;
+                }
+
+                // Calculate the probability of pregnancy
+                $probability = ($countdown / 14) * 100;
+
+                // Display the probability of pregnancy
+                echo "<p><strong>" . round($probability, 2) . "%</strong></p>";
+            } else {
+                echo "<p>No data found for the user.</p>";
+            }
+
+            $stmt->close();
+            ?>
+
+
         </div>
         <div class="card">
             <h3><i class="fas fa-hourglass-half"></i> Countdown to Ovulation</h3>
-          <p>5 days</p>
+            <?php
+
+
+            // Query to fetch the start date of the period for the user
+            $query = "SELECT LastPeriodDate FROM periodpredictions WHERE UserID = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $userID);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                $lastPeriodDate = new DateTime($row['LastPeriodDate']);
+
+                // Calculate ovulation date
+                $ovulationDate = clone $lastPeriodDate;
+                $ovulationDate->add(new DateInterval("P14D"));
+
+                // Calculate countdown to ovulation
+                $now = new DateTime();
+                $interval = $now->diff($ovulationDate);
+                $countdown = $interval->days;
+
+                // If the countdown is negative or exceeds the day of ovulation, adjust it
+                if ($countdown < 0 || $countdown > 14) {
+                    $countdown = 14;
+                }
+
+                // Display countdown to ovulation
+                echo "<p><strong>" . $countdown . " days</strong></p>";
+            } else {
+                echo "<p>No data found for the user.</p>";
+            }
+
+            $stmt->close();
+            ?>
+
         </div>
         <div class="card">     
             <h3><i class="fas fa-hourglass-start"></i> Countdown to Next Period</h3>
-          <p>12 days</p>
+            <?php
+            // Query to fetch NextPeriodStartDate and AverageCycleLength for the user
+            $query = "SELECT NextPeriodStartDate, AverageCycleLength FROM periodpredictions WHERE UserID = ?";
+
+            $stmt = $conn->prepare($query);
+
+            if ($stmt) {
+                $stmt->bind_param("i", $userID); // Bind user ID to the query
+
+                if ($stmt->execute()) {
+                    $result = $stmt->get_result();
+
+                    if ($result->num_rows > 0) {
+                        $row = $result->fetch_assoc();
+                        $nextPeriodStartDate = $row['NextPeriodStartDate'];
+                        $averageCycleLength = $row['AverageCycleLength'];
+
+                        // Calculate countdown to next period
+                        $now = new DateTime();
+                        $nextPeriod = new DateTime($nextPeriodStartDate);
+                        $interval = $now->diff($nextPeriod);
+                        $countdown = $interval->days;
+
+                        // Ensure countdown is within the range of the average cycle length
+                        $countdown = min($countdown, $averageCycleLength);
+
+                        // Display countdown within a paragraph tag with labels
+                        echo "<p> <strong>" . $countdown . " days</strong></p>";
+                    } else {
+                        echo "No NextPeriodStartDate data found.";
+                    }
+                } else {
+                    echo "Error executing query: " . $stmt->error;
+                }
+
+                $stmt->close();
+            } else {
+                echo "Error preparing statement: " . $conn->error;
+            }
+            ?>
+
+
+
         </div>
       </div>
       
@@ -675,8 +911,6 @@ if(isset($_SESSION['userID']))
           hideDeleteMessage();
         }
       </script>
-      
-
-
+    
 </body>
 </html>

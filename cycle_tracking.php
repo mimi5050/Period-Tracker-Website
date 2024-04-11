@@ -1,3 +1,50 @@
+<?php
+// Start or resume a session
+session_start();
+
+// Check if the user is logged in
+if (!isset($_SESSION['UserID'])) {
+    // Redirect the user to the login page if not logged in
+    header("Location: login.php");
+    exit(); // Stop script execution
+}
+
+// Include connection.php to establish database connection
+include 'connection.php';
+
+// Fetch logged-in user's ID from session
+$userID = $_SESSION['UserID'];
+
+// Initialize variables to store cycle length and menstruation length
+$cycleLength = 0;
+$menstruationLength = 0;
+
+// Fetch cycle length and menstruation length from the database
+$query = "SELECT AverageCycleLength, AveragePeriodLength FROM periodpredictions WHERE UserID = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $userID); 
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Check if there are rows returned
+if ($result->num_rows > 0) {
+    // Fetch associative array
+    $row = $result->fetch_assoc();
+    
+    // Access the values
+    $cycleLength = $row["AverageCycleLength"];
+    $menstruationLength = $row["AveragePeriodLength"];
+    
+    // Now you can use $cycleLength and $menstruationLength as needed
+} else {
+    // Handle the case where no rows are returned
+}
+
+// Close the statement and connection
+$stmt->close();
+$conn->close();
+?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -445,25 +492,29 @@
 </div>
 
 <script>
-// Function to determine the phase of the cycle based on the day
 function getPhase(day) {
-  const cycleLength = 28; // Assuming a standard 28-day menstrual cycle
-  const menstruationLength = 5; // Assuming menstruation lasts for 5 days
+  const cycleLength = <?php echo $cycleLength; ?>;
+  const menstruationLength = <?php echo $menstruationLength; ?>;
+  
+  // Calculate the day relative to the menstrual period start date
+  const relativeDay = (day % cycleLength) + 1;
 
-  // Calculate the day of the cycle (assuming day 1 is the first day of menstruation)
-  const cycleDay = (day % cycleLength) + 1;
+  // Calculate the expected day of ovulation
+  const ovulationDay = cycleLength / 2;
 
-  // Determine the phase based on the cycle day
-  if (cycleDay <= menstruationLength) {
+  // Determine the phase based on the relative day
+
+  if (relativeDay <= menstruationLength) {
     return "menstruation";
-  } else if (cycleDay > menstruationLength && cycleDay <= 14) {
+  } else if (relativeDay > menstruationLength && relativeDay <= ovulationDay) {
     return "follicular";
-  } else if (cycleDay === 15) {
+  } else if (relativeDay === ovulationDay + 1) {
     return "ovulation";
   } else {
     return "luteal";
   }
 }
+
 
 const daysContainer = document.querySelector(".days");
 const nextBtn = document.querySelector(".next");
